@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../backend/models/User');
 
 const auth = async (req, res, next) => {
   try {
@@ -35,11 +35,11 @@ const auth = async (req, res, next) => {
         role: decoded.role // Use role from token
       });
       
-      // Set user info with role from token
+      // Set user info with role from database
       req.user = {
         id: user._id,
         email: user.email,
-        role: decoded.role // Use role from token
+        role: user.role // Use role from database
       };
       
       next();

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e73c4e" />
+  <meta name="description" content="BSU Room Scheduling - Login" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <title>BSU Room Scheduling - Login</title>
+  <style>
+    body {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Roboto', sans-serif;
+    }
+    .login-sidebar {
+      background-color: #e73c4e;
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 0 20px 20px 0;
+    }
+    .login-logo {
+      width: 200px;
+      height: 200px;
+      margin-bottom: 1rem;
+    }
+    .login-content {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem 4rem;
+    }
+    .form-container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .btn-login {
+      width: 100%;
+      background-color: #e73c4e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.75rem;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .btn-login:hover {
+      background-color: #d1313f;
+    }
+    .login-divider {
+      display: flex;
+      align-items: center;
+      margin: 2rem 0;
+    }
+    .login-divider::before, .login-divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #ddd;
+    }
+    .login-divider span {
+      padding: 0 1rem;
+      color: #666;
+    }
+    .signup-link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .signup-link a {
+      color: #e73c4e;
+      text-decoration: none;
+    }
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+    .calendar-icon {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 1rem;
+    }
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .remember-me input {
+      margin-right: 0.5rem;
+    }
+    .forgot-password {
+      text-align: right;
+    }
+    .forgot-password a {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-sidebar">
+    <img src="images/logo.png" alt="BSU Logo" class="login-logo" />
+    <img src="images/calendar.png" alt="Calendar" class="calendar-icon" />
+    <h1>Batangas State University<br>Room Scheduler</h1>
+    <p>This system helps students book rooms for organizational events and allows faculty or admins to review, approve, or manage those requests. It streamlines the room scheduling process to make event planning easier and more organized.</p>
+  </div>
+  
+  <div class="login-content">
+    <div class="form-container">
+      <h1>Sign In</h1>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" name="role" required>
+            <option value="">Select Role</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email Address:</label>
+          <input type="email" id="email" name="email" placeholder="student@gmail.com" required />
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+        </div>
+        
+        <div class="remember-me">
+          <input type="checkbox" id="remember" name="remember" />
+          <label for="remember">Remember me</label>
+          <div class="forgot-password" style="margin-left: auto;">
+            <a href="#">Forgot Password?</a>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn-login">Sign In</button>
+      </form>
+      
+      <div class="login-divider">
+        <span>OR</span>
+      </div>
+      
+      <div class="signup-link">
+        <a href="register.html">Sign Up Here</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import auth from './js/auth.js';
+    
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      
+      try {
+        await auth.login(email, password, role);
+        // Remove the window.location.href line since auth.login now handles redirection
+      } catch (error) {
+        alert('Login failed: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

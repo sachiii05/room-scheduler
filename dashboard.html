@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1976d2" />
+  <meta name="description" content="Room Scheduler - Dashboard" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    .navbar {
+      background-color: #1976d2;
+      color: white;
+      padding: 1rem 2rem;
+    }
+
+    .navbar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar-logo {
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    .navbar-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .navbar-link {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .dashboard-card {
+      background-color: white;
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .room-card {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .room-card:hover {
+      background-color: #e9ecef;
+    }
+
+    .booking-card {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .status-confirmed {
+      color: #2e7d32;
+    }
+
+    .status-pending {
+      color: #f57c00;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .btn-primary {
+      background-color: #1976d2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #1565c0;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #1976d2;
+      color: #1976d2;
+    }
+
+    .btn-outline:hover {
+      background-color: #1565c0;
+      color: white;
+    }
+  </style>
+  <title>Room Scheduler - Dashboard</title>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-logo">Room Scheduler</div>
+      <div class="navbar-links">
+        <a href="dashboard.html" class="navbar-link">Dashboard</a>
+        <a href="book-room.html" class="navbar-link">Book Room</a>
+        <a href="user-bookings.html" class="navbar-link">My Bookings</a>
+        <a href="#" id="logout-link" class="navbar-link">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="dashboard-card">
+      <h2>Welcome, <span id="user-name">User</span>!</h2>
+      <p id="role-description">Book a room or manage your bookings</p>
+    </div>
+
+    <div id="admin-actions" class="dashboard-card" style="display: none;">
+      <h2>Quick Actions</h2>
+      <div class="dashboard-actions">
+        <a href="admin/create-room.html" class="btn btn-primary">Create Room</a>
+        <a href="admin/room-management.html" class="btn btn-outline">Manage Rooms</a>
+      </div>
+    </div>
+
+    <div class="dashboard-card">
+      <h2>Available Rooms</h2>
+      <div id="rooms-container" class="rooms-grid">
+        <p id="no-rooms-message" style="display: none;">No rooms available</p>
+      </div>
+    </div>
+
+    <div class="dashboard-card">
+      <h2>Your Bookings</h2>
+      <div id="bookings-container">
+        <p id="no-bookings-message" style="display: none;">You have no bookings</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Check if user is logged in
+      if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        document.getElementById('user-name').textContent = user.name || 'User';
+        
+        // Show/hide admin features based on user role
+        if (user.role === 'admin') {
+          document.getElementById('role-description').textContent = 'Manage rooms and approve bookings';
+          document.getElementById('admin-actions').style.display = 'block';
+        }
+
+        // Load rooms and bookings data
+        const token = localStorage.getItem('token');
+        
+        // Fetch rooms
+        const roomsResponse = await fetch('/api/rooms', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (roomsResponse.ok) {
+          const rooms = await roomsResponse.json();
+          displayRooms(rooms, user.role);
+        }
+
+        // Fetch bookings
+        const bookingsEndpoint = user.role === 'admin' ? '/api/bookings' : '/api/bookings/user';
+        const bookingsResponse = await fetch(bookingsEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (bookingsResponse.ok) {
+          const bookings = await bookingsResponse.json();
+          displayBookings(bookings);
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      }
+
+      // Logout functionality
+      document.getElementById('logout-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+      });
+    });
+
+    function displayRooms(rooms, userRole) {
+      const container = document.getElementById('rooms-container');
+      const noRoomsMessage = document.getElementById('no-rooms-message');
+      
+      if (!rooms || rooms.length === 0) {
+        noRoomsMessage.style.display = 'block';
+        return;
+      }
+
+      // Filter rooms based on user role
+      const filteredRooms = userRole === 'admin' ? rooms : rooms.filter(room => room.status === 'approved');
+      
+      if (filteredRooms.length === 0) {
+        noRoomsMessage.style.display = 'block';
+        return;
+      }
+
+      filteredRooms.forEach(room => {
+        const roomEl = document.createElement('div');
+        roomEl.className = 'room-card';
+        roomEl.innerHTML = `
+          <h3>${room.name}</h3>
+          <p>Capacity: ${room.capacity}</p>
+          <p>Status: ${room.status}</p>
+          <div class="room-actions">
+            <a href="${userRole === 'admin' ? 'admin/edit-room.html?id=' + room._id : 'book-room.html?id=' + room._id}" 
+               class="btn ${userRole === 'admin' ? 'btn-outline' : 'btn-primary'}">
+               ${userRole === 'admin' ? 'Edit' : 'Book'}
+            </a>
+          </div>
+        `;
+        container.appendChild(roomEl);
+      });
+    }
+
+    function displayBookings(bookings) {
+      const container = document.getElementById('bookings-container');
+      const noBookingsMessage = document.getElementById('no-bookings-message');
+      
+      if (!bookings || bookings.length === 0) {
+        noBookingsMessage.style.display = 'block';
+        return;
+      }
+
+      bookings.forEach(booking => {
+        const bookingEl = document.createElement('div');
+        bookingEl.className = 'booking-card';
+        
+        const startTime = new Date(booking.startTime).toLocaleString();
+        const endTime = new Date(booking.endTime).toLocaleString();
+        
+        bookingEl.innerHTML = `
+          <h3>${booking.room?.name || 'Room'}</h3>
+          <p>Start: ${startTime}</p>
+          <p>End: ${endTime}</p>
+          <p class="booking-status ${booking.status === 'confirmed' ? 'status-confirmed' : 'status-pending'}">
+            Status: ${booking.status}
+          </p>
+          <div class="booking-actions">
+            <a href="booking-details.html?id=${booking._id}" class="btn btn-outline">View Details</a>
+          </div>
+        `;
+        container.appendChild(bookingEl);
+      });
+    }
+  </script>
+</body>
+</html>

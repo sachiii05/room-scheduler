@@ -1,0 +1,144 @@
+/* Sidebar Styles */
+.sidebar {
+  width: 250px;
+  background-color: #e73c4e;
+  color: white;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-collapsed {
+  transform: translateX(-250px);
+}
+
+.sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-logo {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background-color: white;
+  padding: 3px;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  margin-bottom: 5px;
+  overflow: hidden;
+}
+
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s;
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  transform: translateY(0);
+}
+
+.sidebar-menu a:hover,
+.sidebar-menu a.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-menu a:active {
+  transform: translateY(-5px);
+  transition: transform 0.2s;
+}
+
+.sidebar-menu a i {
+  margin-right: 15px;
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  background-color: #e73c4e;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+}
+
+.sidebar-toggle.active {
+  transform: rotate(180deg);
+}
+
+.sidebar-toggle i {
+  font-size: 18px;
+}
+
+/* Main content adjustments */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  margin-left: 250px;
+  transition: margin-left 0.3s ease-in-out;
+  width: calc(100% - 250px);
+}
+
+.main-content-expanded {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-250px);
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .sidebar-toggle {
+    left: 20px;
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}

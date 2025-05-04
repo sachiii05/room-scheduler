@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e73c4e" />
+  <meta name="description" content="BSU Room Scheduling - Book a Room" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>BSU Room Scheduling - Book a Room</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      width: 88px;
+      background-color: #e73c4e;
+      color: white;
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      transition: width 0.3s ease;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar:hover {
+      width: 240px;
+    }
+
+    .sidebar-header {
+      padding: 20px 15px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.2rem;
+      margin-left: 15px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-header h1 {
+      opacity: 1;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      color: white;
+      text-decoration: none;
+      transition: background-color 0.3s;
+      white-space: nowrap;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-menu i {
+      font-size: 20px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .sidebar-menu span {
+      margin-left: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-menu span {
+      opacity: 1;
+    }
+
+    .logout-link {
+      margin-top: auto;
+      margin-bottom: 20px;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      margin-left: 88px;
+      padding: 20px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .dashboard-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .booking-form-container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #e73c4e;
+      outline: none;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      border: none;
+    }
+    
+    .btn-primary {
+      background-color: #e73c4e;
+      color: white;
+      padding: 12px 24px;
+      font-size: 16px;
+      display: block;
+      width: 100%;
+    }
+    
+    .btn-primary:hover {
+      background-color: #d1313f;
+    }
+    
+    .btn-outline {
+      border: 1px solid #e73c4e;
+      color: #e73c4e;
+      background-color: transparent;
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(231, 60, 78, 0.1);
+    }
+    
+    .error-message {
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .error-message:not(:empty) {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-calendar-plus"></i>
+      <h1>Book Room</h1>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="dashboard.html">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="rooms.html">
+          <i class="fas fa-door-open"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li>
+        <a href="book-room.html" class="active">
+          <i class="fas fa-calendar-plus"></i>
+          <span>Book Room</span>
+        </a>
+      </li>
+      <li>
+        <a href="user-bookings.html">
+          <i class="fas fa-calendar-check"></i>
+          <span>My Bookings</span>
+        </a>
+      </li>
+      <li id="admin-menu-item" style="display: none;">
+        <a href="admin-dashboard.html">
+          <i class="fas fa-cogs"></i>
+          <span>Admin</span>
+        </a>
+      </li>
+      <li class="logout-link">
+        <a href="#" id="logout-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h1 class="dashboard-title">Book a Room</h1>
+      <div class="user-profile">
+        <div class="user-avatar">
+          <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="User" id="user-avatar">
+        </div>
+        <span id="user-name">User</span>
+      </div>
+    </div>
+
+    <div class="booking-form-container">
+      <div id="error-message" class="error-message"></div>
+      
+      <form id="booking-form">
+        <div class="form-group">
+          <label for="room">Select Room</label>
+          <select id="room" name="room" required>
+            <option value="">-- Select a Room --</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date" required />
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="start-time">Start Time</label>
+            <input type="time" id="start-time" name="start-time" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="end-time">End Time</label>
+            <input type="time" id="end-time" name="end-time" required />
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="purpose">Purpose</label>
+          <textarea id="purpose" name="purpose" rows="4" placeholder="Describe the purpose of your booking" required></textarea>
+        </div>
+        
+        <button type="submit" class="btn-primary">Book Room</button>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import auth from './js/auth.js';
+    import config from './js/config.js';
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Check if user is logged in
+        if (!auth.isAuthenticated()) {
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Check if token is valid
+        const token = auth.getToken();
+        if (!token) {
+          auth.logout(); // Clear any invalid session data
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Get user information
+        const user = auth.getUser();
+        if (!user) {
+          auth.logout(); // Clear any invalid session data
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Update user name
+        const userNameElements = document.querySelectorAll('#user-name');
+        userNameElements.forEach(element => {
+          element.textContent = user.name || 'User';
+        });
+        
+        // Show admin menu if user is admin
+        if (user.role === 'admin') {
+          const adminMenuItem = document.getElementById('admin-menu-item');
+          if (adminMenuItem) {
+            adminMenuItem.style.display = 'block';
+          }
+        }
+        
+        // Logout functionality
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            auth.logout();
+            window.location.href = 'index.html';
+          });
+        }
+      
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('date');
+        if (dateInput) {
+          dateInput.min = today;
+        }
+        
+        // Fetch available rooms
+        try {
+          const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.rooms}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            // Handle unauthorized errors (expired token)
+            if (response.status === 401 || response.status === 403) {
+              auth.logout(); // Clear invalid session data
+              window.location.href = 'index.html';
+              return;
+            }
+            
+            throw new Error(`Failed to fetch rooms: ${response.status}`);
+          }
+          
+          const rooms = await response.json();
+          // Filter only available rooms
+          const availableRooms = rooms.filter(room => room.status === 'available');
+          const roomSelect = document.getElementById('room');
+          
+          if (roomSelect) {
+            // Clear existing options
+            roomSelect.innerHTML = '<option value="">Select a room</option>';
+            
+            availableRooms.forEach(room => {
+              const option = document.createElement('option');
+              option.value = room._id;
+              option.textContent = `${room.name} (Capacity: ${room.capacity || 0})`;
+              roomSelect.appendChild(option);
+            });
+          }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('error-message').textContent = 'Failed to load rooms. Please try again.';
+      }
+      
+        // Handle form submission
+        const bookingForm = document.getElementById('booking-form');
+        if (bookingForm) {
+          bookingForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const roomId = document.getElementById('room').value;
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+            const purpose = document.getElementById('purpose').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            // Form validation
+            if (!roomId) {
+              if (errorMessage) errorMessage.textContent = 'Please select a room';
+              return;
+            }
+            
+            if (!date) {
+              if (errorMessage) errorMessage.textContent = 'Please select a date';
+              return;
+            }
+            
+            if (!startTime) {
+              if (errorMessage) errorMessage.textContent = 'Please select a start time';
+              return;
+            }
+            
+            if (!endTime) {
+              if (errorMessage) errorMessage.textContent = 'Please select an end time';
+              return;
+            }
+            
+            // Validate end time is after start time
+            if (startTime >= endTime) {
+              if (errorMessage) errorMessage.textContent = 'End time must be after start time';
+              return;
+            }
+        
+            try {
+              if (errorMessage) errorMessage.textContent = '';
+              
+              const submitButton = bookingForm.querySelector('button[type="submit"]');
+              if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Booking...';
+              }
+              
+              // Check if user is still authenticated
+              if (!auth.isAuthenticated() || !auth.getToken()) {
+                alert('Your session has expired. Please log in again.');
+                auth.logout();
+                window.location.href = 'index.html';
+                return;
+              }
+              
+              const currentToken = auth.getToken();
+              
+              const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.bookings}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'Authorization': `Bearer ${currentToken}`
+                },
+                body: JSON.stringify({
+                  room: roomId,
+                  date: date,
+                  startTime: startTime,
+                  endTime: endTime,
+                  purpose: purpose
+                })
+              });
+              
+              if (!response.ok) {
+                // Handle unauthorized errors
+                if (response.status === 401 || response.status === 403) {
+                  alert('Your session has expired. Please log in again.');
+                  auth.logout();
+                  window.location.href = 'index.html';
+                  return;
+                }
+                
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to book room');
+              }
+              
+              // Success message
+              alert('Room booked successfully!');
+              window.location.href = 'user-bookings.html';
+            } catch (error) {
+              console.error('Error:', error);
+              if (errorMessage) {
+                errorMessage.textContent = error.message || 'Failed to book room. Please try again.';
+              }
+              
+              const submitButton = bookingForm.querySelector('button[type="submit"]');
+              if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Book Room';
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing page:', error);
+      }
+    });
+  </script>
+</body>
+</html>

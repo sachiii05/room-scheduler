@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="description" content="BSU Room Scheduling - Available Rooms" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>BSU Room Scheduling - Rooms</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      width: 88px;
+      background-color: #e73c4e;
+      color: white;
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      transition: width 0.3s ease;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar:hover {
+      width: 240px;
+    }
+
+    .sidebar-header {
+      padding: 20px 15px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.2rem;
+      margin-left: 15px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-header h1 {
+      opacity: 1;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      color: white;
+      text-decoration: none;
+      transition: background-color 0.3s;
+      white-space: nowrap;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-menu i {
+      font-size: 20px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .sidebar-menu span {
+      margin-left: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-menu span {
+      opacity: 1;
+    }
+
+    .logout-link {
+      margin-top: auto;
+      margin-bottom: 20px;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      margin-left: 88px;
+      padding: 20px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 50px;
+      padding: 8px 15px;
+      width: 300px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-bar input {
+      border: none;
+      outline: none;
+      width: 100%;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+
+    .search-bar i {
+      color: #999;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .booking-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .booking-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .booking-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .booking-card-header {
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .booking-card-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+    
+    .booking-status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status-available {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status-unavailable {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .booking-card-body {
+      padding: 15px;
+    }
+    
+    .booking-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .booking-details p {
+      margin: 5px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .booking-details i {
+      margin-right: 8px;
+      color: #e73c4e;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .booking-card-footer {
+      padding: 15px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .search-filter-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .search-box {
+      display: flex;
+      flex: 1;
+      max-width: 400px;
+    }
+    
+    .search-box input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px 0 0 4px;
+      font-size: 14px;
+    }
+    
+    .search-box button {
+      background-color: #e73c4e;
+      color: white;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      padding: 0 15px;
+      cursor: pointer;
+    }
+    
+    .filter-box select {
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: white;
+    }
+    
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #e73c4e;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .booking-details {
+        grid-template-columns: 1fr;
+      }
+      
+      .search-filter-container {
+        flex-direction: column;
+      }
+      
+      .search-box {
+        max-width: 100%;
+      }
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      border: none;
+      font-size: 14px;
+    }
+    
+    .btn-primary {
+      background-color: #e73c4e;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #d1313f;
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+    
+    .btn-outline {
+      border: 1px solid #e73c4e;
+      color: #e73c4e;
+      background-color: transparent;
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(231, 60, 78, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar toggle button -->
+  <button class="sidebar-toggle" id="sidebar-toggle">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-th-large"></i>
+      <h1>Rooms</h1>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="dashboard.html">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="rooms.html" class="active">
+          <i class="fas fa-door-open"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li>
+        <a href="book-room.html">
+          <i class="fas fa-calendar-plus"></i>
+          <span>Book Room</span>
+        </a>
+      </li>
+      <li>
+        <a href="user-bookings.html">
+          <i class="fas fa-calendar-check"></i>
+          <span>My Bookings</span>
+        </a>
+      </li>
+      <li id="admin-menu-item" style="display: none;">
+        <a href="admin-dashboard.html">
+          <i class="fas fa-cogs"></i>
+          <span>Admin</span>
+        </a>
+      </li>
+      <li class="logout-link">
+        <a href="#" id="logout-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <div class="header">
+      <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="search-input" placeholder="Search rooms...">
+      </div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="User" id="user-avatar">
+        </div>
+        <span id="user-name">User</span>
+      </div>
+    </div>
+    
+    <h1 class="dashboard-title">Available Rooms</h1>
+
+    <div class="search-filter-container" style="margin-top: 20px;">
+      <div class="filter-box">
+        <select id="capacity-filter" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd;">
+          <option value="all">All Capacities</option>
+          <option value="1-10">1-10 People</option>
+          <option value="11-20">11-20 People</option>
+          <option value="21-50">21-50 People</option>
+          <option value="50+">50+ People</option>
+        </select>
+        <button id="search-button" class="btn btn-primary" style="margin-left: 10px;">Apply Filter</button>
+      </div>
+    </div>
+
+    <div class="rooms-container" id="rooms-container">
+      <div class="loading-spinner" id="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading rooms...</p>
+      </div>
+      <div id="no-rooms-message" style="display: none;">
+        <p>No rooms available</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import config from './js/config.js';
+    import auth from './js/auth.js';
+    // DOM elements
+    const roomsContainer = document.getElementById('rooms-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const noRoomsMessage = document.getElementById('no-rooms-message');
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const capacityFilter = document.getElementById('capacity-filter');
+    
+    // Check if user is authenticated
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Check if user is logged in
+        if (!auth.isAuthenticated()) {
+          console.log('User not authenticated, redirecting to login page');
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Check if token is valid
+        const token = auth.getToken();
+        if (!token) {
+          console.error('No authentication token found');
+          auth.logout(); // Clear any invalid session data
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Get user information
+        const user = auth.getUser();
+        
+        // Update user name and avatar
+        if (user) {
+          const userNameElements = document.querySelectorAll('#user-name');
+          userNameElements.forEach(element => {
+            element.textContent = user.name || 'User';
+          });
+        }
+        
+        // Show admin menu if user is admin
+        if (user && user.role === 'admin') {
+          const adminMenuItem = document.getElementById('admin-menu-item');
+          if (adminMenuItem) {
+            adminMenuItem.style.display = 'block';
+          }
+        }
+        
+        // Logout functionality
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            auth.logout();
+            window.location.href = 'index.html';
+          });
+        }
+        
+        // Load rooms
+        fetchRooms();
+        
+      } catch (error) {
+        console.error('Error initializing page:', error);
+      }
+    });
+
+    // Fetch and display rooms
+    async function fetchRooms() {
+      try {
+        // Verify authentication is still valid
+        if (!auth.isAuthenticated()) {
+          console.log('User not authenticated, redirecting to login page');
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        const token = auth.getToken();
+        if (!token) {
+          console.error('No authentication token found');
+          auth.logout();
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        if (loadingSpinner) loadingSpinner.style.display = 'flex';
+        if (noRoomsMessage) noRoomsMessage.style.display = 'none';
+        
+        const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.rooms}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response from rooms API:', errorText);
+          
+          // Handle unauthorized errors (expired token)
+          if (response.status === 401 || response.status === 403) {
+            console.log('Authentication token expired or invalid');
+            auth.logout(); // Clear invalid session data
+            window.location.href = 'index.html';
+            return;
+          }
+          
+          throw new Error(`Failed to fetch rooms: ${response.status}`);
+        }
+        
+        const roomsData = await response.json();
+        
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        
+        // Check if roomsData is an array or needs to be extracted from response
+        let rooms = roomsData;
+        if (!Array.isArray(roomsData)) {
+          rooms = roomsData.data || roomsData.rooms || [];
+        }
+        
+        if (!Array.isArray(rooms)) {
+          rooms = [];
+        }
+        
+        if (!rooms || rooms.length === 0) {
+          if (noRoomsMessage) noRoomsMessage.style.display = 'block';
+        } else {
+          displayRooms(rooms);
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (noRoomsMessage) {
+          noRoomsMessage.textContent = 'Error loading rooms. Please try again.';
+          noRoomsMessage.style.display = 'block';
+        }
+      }
+    }
+
+    function displayRooms(rooms) {
+      if (!roomsContainer) return;
+      
+      roomsContainer.innerHTML = '';
+      
+      const roomsList = document.createElement('div');
+      roomsList.className = 'booking-cards';
+      
+      rooms.forEach(room => {
+        const roomCard = document.createElement('div');
+        roomCard.className = 'room-card';
+        
+        // Handle potential null/undefined values safely
+        const roomName = room.name || 'Unnamed Room';
+        const roomStatus = room.status || 'Unknown';
+        const roomCapacity = room.capacity || 0;
+        const roomLocation = room.location || 'Not specified';
+        const roomType = room.type || 'Standard';
+        const roomAmenities = room.amenities ? (Array.isArray(room.amenities) ? room.amenities.join(', ') : room.amenities) : 'None';
+        const roomId = room._id || room.id || '';
+        
+        roomCard.innerHTML = `
+          <div class="booking-card-header">
+            <h3>${roomName}</h3>
+            <span class="status ${roomStatus === 'available' ? 'status-available' : 'status-unavailable'}">
+              ${roomStatus}
+            </span>
+          </div>
+          <div class="booking-card-body">
+            <div class="booking-details">
+              <p><i class="fas fa-users"></i> Capacity: ${roomCapacity} people</p>
+              <p><i class="fas fa-map-marker-alt"></i> Location: ${roomLocation}</p>
+              <p><i class="fas fa-info-circle"></i> Type: ${roomType}</p>
+              <p><i class="fas fa-list-ul"></i> Amenities: ${roomAmenities}</p>
+            </div>
+          </div>
+          <div class="booking-card-footer">
+            <button class="btn btn-primary book-btn" data-room-id="${roomId}">Book Now</button>
+            <button class="btn btn-outline details-btn" data-room-id="${roomId}">View Details</button>
+          </div>
+        `;
+        
+        roomsList.appendChild(roomCard);
+      });
+      
+      roomsContainer.appendChild(roomsList);
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('.book-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const roomId = e.target.getAttribute('data-room-id');
+          window.location.href = `book-room.html?roomId=${roomId}`;
+        });
+      });
+      
+      document.querySelectorAll('.details-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const roomId = e.target.getAttribute('data-room-id');
+          // You can implement a modal or redirect to a room details page
+          alert(`Room details for ID: ${roomId} will be shown here.`);
+        });
+      });
+    }
+
+    // Filter rooms by capacity
+    function filterRoomsByCapacity(rooms, capacityRange) {
+      if (capacityRange === 'all') return rooms;
+      
+      return rooms.filter(room => {
+        const capacity = room.capacity || 0;
+        
+        switch (capacityRange) {
+          case '1-10':
+            return capacity >= 1 && capacity <= 10;
+          case '11-20':
+            return capacity >= 11 && capacity <= 20;
+          case '21-50':
+            return capacity >= 21 && capacity <= 50;
+          case '50+':
+            return capacity > 50;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Search rooms by name
+    function searchRoomsByName(rooms, searchTerm) {
+      if (!searchTerm) return rooms;
+      
+      const term = searchTerm.toLowerCase();
+      return rooms.filter(room => 
+        room.name.toLowerCase().includes(term) || 
+        (room.location && room.location.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply filters when search or filter changes
+    async function applyFilters() {
+      try {
+        // Verify authentication is still valid
+        if (!auth.isAuthenticated()) {
+          console.log('User not authenticated, redirecting to login page');
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        const token = auth.getToken();
+        if (!token) {
+          console.error('No authentication token found');
+          auth.logout();
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        if (loadingSpinner) loadingSpinner.style.display = 'flex';
+        
+        console.log('Applying filters...');
+        const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.rooms}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response from rooms API:', errorText);
+          
+          // Handle unauthorized errors (expired token)
+          if (response.status === 401 || response.status === 403) {
+            console.log('Authentication token expired or invalid');
+            auth.logout(); // Clear invalid session data
+            window.location.href = 'index.html';
+            return;
+          }
+          
+          throw new Error(`Failed to fetch rooms: ${response.status}`);
+        }
+
+        const roomsData = await response.json();
+        console.log('Rooms data for filtering:', roomsData);
+        
+        // Check if roomsData is an array or needs to be extracted from response
+        let rooms = roomsData;
+        if (!Array.isArray(roomsData)) {
+          console.log('Rooms data is not an array, trying to extract rooms array for filtering');
+          rooms = roomsData.data || roomsData.rooms || [];
+          if (!Array.isArray(rooms)) {
+            console.error('Could not find rooms array in response for filtering');
+            rooms = [];
+          }
+        }
+        
+        // Apply capacity filter
+        const capacityValue = capacityFilter.value;
+        console.log('Applying capacity filter:', capacityValue);
+        rooms = filterRoomsByCapacity(rooms, capacityValue);
+        
+        // Apply search filter
+        const searchTerm = searchInput.value;
+        console.log('Applying search filter:', searchTerm);
+        rooms = searchRoomsByName(rooms, searchTerm);
+        
+        console.log('Filtered rooms:', rooms);
+        
+        // Display filtered rooms
+        if (rooms.length === 0) {
+          roomsContainer.innerHTML = '<p>No rooms match your search criteria.</p>';
+        } else {
+          displayRooms(rooms);
+        }
+        
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+      } catch (error) {
+        console.error('Error applying filters:', error);
+      }
+    }
+
+    // Event listeners for search and filter
+    searchButton.addEventListener('click', applyFilters);
+    searchInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        applyFilters();
+      }
+    });
+    capacityFilter.addEventListener('change', applyFilters);
+
+    // Load rooms on page load
+    fetchRooms();
+  </script>
+</body>
+</html>

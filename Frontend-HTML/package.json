@@ -1,0 +1,13 @@
+{
+  "name": "room-scheduler-frontend-html",
+  "version": "1.0.0",
+  "description": "HTML frontend for BSU Room Scheduler",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6"
+  }
+}

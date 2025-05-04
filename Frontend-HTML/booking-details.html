@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e73c4e" />
+  <meta name="description" content="BSU Room Scheduling - Booking Details" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>BSU Room Scheduling - Booking Details</title>
+</head>
+<body>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      width: 88px;
+      background-color: #e73c4e;
+      color: white;
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      transition: width 0.3s ease;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar:hover {
+      width: 240px;
+    }
+
+    .sidebar-header {
+      padding: 20px 15px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.2rem;
+      margin-left: 15px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-header h1 {
+      opacity: 1;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      color: white;
+      text-decoration: none;
+      transition: background-color 0.3s;
+      white-space: nowrap;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-menu i {
+      font-size: 20px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .sidebar-menu span {
+      margin-left: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .sidebar-menu span {
+      opacity: 1;
+    }
+
+    .logout-link {
+      margin-top: auto;
+      margin-bottom: 20px;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      flex: 1;
+      margin-left: 88px;
+      padding: 20px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .dashboard-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .error-message {
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .booking-details-card {
+      background-color: white;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    
+    .booking-info h3 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    
+    .booking-info p {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .booking-info i {
+      margin-right: 10px;
+      color: #666;
+      width: 20px;
+    }
+    
+    .booking-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 10px;
+    }
+    
+    .status-confirmed {
+      background-color: #E8F5E9;
+      color: #2e7d32;
+    }
+    
+    .status-pending {
+      background-color: #FFF3E0;
+      color: #f57c00;
+    }
+    
+    .status-cancelled {
+      background-color: #FFEBEE;
+      color: #c62828;
+    }
+    
+    .booking-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn i {
+      margin-right: 8px;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #e73c4e;
+      color: #e73c4e;
+    }
+    
+    .btn-outline:hover {
+      background-color: #e73c4e;
+      color: white;
+    }
+  </style>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-calendar-check"></i>
+      <h1>Booking Details</h1>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="dashboard.html">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="rooms.html">
+          <i class="fas fa-door-open"></i>
+          <span>Rooms</span>
+        </a>
+      </li>
+      <li>
+        <a href="book-room.html">
+          <i class="fas fa-calendar-plus"></i>
+          <span>Book Room</span>
+        </a>
+      </li>
+      <li>
+        <a href="user-bookings.html">
+          <i class="fas fa-calendar-check"></i>
+          <span>My Bookings</span>
+        </a>
+      </li>
+      <li id="admin-menu-item" style="display: none;">
+        <a href="admin-dashboard.html">
+          <i class="fas fa-cogs"></i>
+          <span>Admin</span>
+        </a>
+      </li>
+      <li class="logout-link">
+        <a href="#" id="logout-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h1 class="dashboard-title">Booking Details</h1>
+      <div class="user-profile">
+        <div class="user-avatar">
+          <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="User" id="user-avatar">
+        </div>
+        <span id="user-name">User</span>
+      </div>
+    </div>
+    
+    <div id="error-message" class="error-message"></div>
+    
+    <div id="booking-details" class="booking-details-card">
+      <!-- Booking details will be populated here -->
+    </div>
+  </main>
+
+  <script type="module">
+    import auth from './js/auth.js';
+    import config from './js/config.js';
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Check if user is logged in
+        if (!auth.isAuthenticated()) {
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Get user information
+        const user = auth.getUser();
+        const token = auth.getToken();
+        
+        // Update user name
+        const userNameElements = document.querySelectorAll('#user-name');
+        userNameElements.forEach(element => {
+          element.textContent = user.name || 'User';
+        });
+        
+        // Show admin menu if user is admin
+        if (user.role === 'admin') {
+          const adminMenuItem = document.getElementById('admin-menu-item');
+          if (adminMenuItem) {
+            adminMenuItem.style.display = 'block';
+          }
+        }
+        
+        // Logout functionality
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            auth.logout();
+            window.location.href = 'index.html';
+          });
+        }
+        
+        // Get booking ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingId = urlParams.get('id');
+        
+        if (!bookingId) {
+          window.location.href = 'user-bookings.html';
+          return;
+        }
+
+        // Fetch booking details
+        const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.bookings}/${bookingId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Booking not found');
+        }
+        
+        const booking = await response.json();
+
+        const bookingDetails = document.getElementById('booking-details');
+        
+        // Format dates and times
+        const bookingDate = new Date(booking.startTime || booking.start_time);
+        const startTime = bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const endDate = new Date(booking.endTime || booking.end_time);
+        const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const dateFormatted = bookingDate.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        // Determine status class
+        const statusClass = booking.status === 'confirmed' ? 'status-confirmed' : 
+                           booking.status === 'cancelled' ? 'status-cancelled' : 'status-pending';
+        
+        bookingDetails.innerHTML = `
+          <div class="booking-info">
+            <h3>${booking.room?.name || 'Room'}</h3>
+            <p><i class="fas fa-calendar"></i> ${dateFormatted}</p>
+            <p><i class="fas fa-clock"></i> ${startTime} - ${endTime}</p>
+            <p><i class="fas fa-info-circle"></i> <strong>Purpose:</strong> ${booking.purpose || booking.reason || 'No purpose specified'}</p>
+            <p><i class="fas fa-user"></i> <strong>Booked By:</strong> ${booking.user?.name || user.name || 'User'}</p>
+            <p><i class="fas fa-tag"></i> <strong>Status:</strong> <span class="booking-status ${statusClass}">
+              ${booking.status || 'pending'}
+            </span></p>
+          </div>
+          
+          ${booking.status !== 'cancelled' ? `
+            <div class="booking-actions">
+              <button class="btn btn-outline" onclick="cancelBooking('${bookingId}')">
+                <i class="fas fa-times"></i> Cancel Booking
+              </button>
+            </div>
+          ` : ''}
+        `;
+      } catch (error) {
+        console.error('Error:', error);
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = error.message || 'Failed to load booking details';
+        errorMessage.style.display = 'block';
+      }
+    });
+
+    // Make cancelBooking function available globally
+    window.cancelBooking = async function(bookingId) {
+      try {
+        if (!confirm('Are you sure you want to cancel this booking?')) {
+          return;
+        }
+        
+        const token = auth.getToken();
+        console.log('Attempting to cancel booking with ID:', bookingId);
+        
+        const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.bookings}/${bookingId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to cancel booking');
+        }
+
+        // Show success message and redirect
+        alert('Booking cancelled successfully');
+        window.location.href = 'user-bookings.html';
+      } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to cancel booking');
+      }
+    }
+  </script>
+</body>
+</html>

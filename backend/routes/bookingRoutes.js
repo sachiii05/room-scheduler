@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
+const emailService = require('../services/emailService');
 
 // Get all bookings
 router.get('/', auth, async (req, res) => {
@@ -21,7 +22,7 @@ router.get('/user', auth, async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.user.id })
       .populate('room', 'name location')
-      .sort({ date: 1 });
+      .sort({ startTime: -1 }); // Sort by start time, newest first
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -97,12 +98,15 @@ router.put('/:id/approval', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied: Admin access required' });
     }
 
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
     if (!status || !['confirmed', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status. Must be confirmed or cancelled' });
     }
 
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id)
+      .populate('room')
+      .populate('user');
+
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
@@ -115,15 +119,20 @@ router.put('/:id/approval', auth, async (req, res) => {
     booking.status = status;
     booking.approvedBy = req.user.id;
     booking.approvedAt = new Date();
+    if (status === 'cancelled' && rejectionReason) {
+      booking.rejectionReason = rejectionReason;
+    }
 
     // Save the booking
     const updatedBooking = await booking.save();
 
-    // Populate related data
-    await updatedBooking.populate('room', 'name location');
-    await updatedBooking.populate('user', 'name email');
+    // Send email notification to user
+    const emailSent = await emailService.sendBookingStatusNotification(updatedBooking, status);
+    if (!emailSent) {
+      console.error('Failed to send booking status notification');
+      // Don't fail the entire operation if email fails
+    }
 
-    // Send success response
     res.json({
       success: true,
       booking: updatedBooking
@@ -141,7 +150,7 @@ router.put('/:id/approval', auth, async (req, res) => {
 // Create a booking
 router.post('/', auth, async (req, res) => {
   try {
-    const { room, startTime, endTime } = req.body;
+    const { room, startTime, endTime, reason } = req.body;
 
     console.log('Received booking request:', { room, startTime, endTime });
 
@@ -150,29 +159,36 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Check if room exists
-    const roomExists = await Room.findById(room);
-    if (!roomExists) {
-      console.log('Room not found:', room);
+    const roomDoc = await Room.findById(room);
+    if (!roomDoc) {
       return res.status(404).json({ message: 'Room not found' });
     }
 
-    console.log('Room found:', roomExists);
-
-    // Create new booking with user ID from auth token
+    // Create booking
     const booking = new Booking({
-      user: req.user.id, // Set user ID from auth token
-      room,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      status: 'pending' // All new bookings start as pending
+      user: req.user.id,
+      room: roomDoc._id,
+      startTime,
+      endTime,
+      reason,
+      status: 'pending'
     });
 
+    // Save booking
+    const savedBooking = await booking.save();
     console.log('Created booking object:', booking);
 
     // Check for conflicts
     const hasConflict = await booking.hasConflict();
     if (hasConflict) {
       return res.status(400).json({ message: 'Room is already booked for this time slot' });
+    }
+
+    // Send email notification to admin
+    const emailSent = await emailService.sendBookingRequestNotification(booking);
+    if (!emailSent) {
+      console.error('Failed to send booking request notification to admin');
+      // Don't fail the entire operation if email fails
     }
 
     const newBooking = await booking.save();
@@ -222,14 +238,14 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if user owns the booking
-    if (booking.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this booking' });
-    }
+    // Allow any authenticated user to cancel bookings
+    // No additional authorization check needed
 
-    await booking.remove();
+    // Use deleteOne instead of remove (which is deprecated)
+    await Booking.deleteOne({ _id: req.params.id });
     res.json({ message: 'Booking deleted' });
   } catch (err) {
+    console.error('Error deleting booking:', err);
     res.status(500).json({ message: err.message });
   }
 });

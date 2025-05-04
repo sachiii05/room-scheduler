@@ -1,7 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+
+// Try to load environment variables
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+
+// Log environment variables for debugging
+console.log('Environment variables loaded:');
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
+console.log('PORT:', process.env.PORT);
+
+// Fallback values if environment variables are not loaded
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://admin:admin@admin.dkezw.mongodb.net/?retryWrites=true&w=majority&appName=admin';
+const PORT = process.env.PORT || 5001;
 
 const app = express();
 
@@ -20,7 +32,8 @@ app.use((req, res, next) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+console.log('Connecting to MongoDB with URI:', MONGODB_URI);
+mongoose.connect(MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -35,7 +48,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
