@@ -37,8 +37,9 @@ A full-stack application for managing room bookings and reservations.
 Create a `.env` file in the Backend directory with the following variables:
 ```
 PORT=5001
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
+MONGODB_URI=mongodb://localhost:27017/room-scheduler
+EMAIL_USER=isaacelomina05@gmail.com
+EMAIL_PASSWORD=vhuixectdrwhypxb
 ```
 
 ### Running the Application
