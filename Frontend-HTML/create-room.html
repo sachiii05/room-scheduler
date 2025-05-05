@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <title>BSU Room Scheduling - Create a Room</title>
   <style>
     * {
@@ -358,13 +358,16 @@
 
     // Sidebar toggle functionality
     const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
 
-    sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('sidebar-collapsed');
-      mainContent.classList.toggle('main-content-expanded');
-    });
+    // Only add event listener if the toggle element exists
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('sidebar-collapsed');
+        mainContent.classList.toggle('main-content-expanded');
+      });
+    }
 
     // Add smooth transitions to sidebar links
     document.querySelectorAll('.sidebar-menu a').forEach(link => {

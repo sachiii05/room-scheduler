@@ -8,11 +8,6 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- FullCalendar CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" />
-  <!-- FullCalendar JS -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <title>BSU Room Scheduling - Book a Room</title>
   <style>
     * {
@@ -249,50 +244,6 @@
       display: block;
     }
     
-    /* Calendar Styles */
-    .calendar-container {
-      margin-bottom: 20px;
-    }
-
-    .fc-timegrid-slot {
-      height: 40px !important;
-    }
-
-    .fc-event {
-      cursor: pointer;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .fc-event.available {
-      background-color: #4CAF50;
-      border-color: #4CAF50;
-    }
-
-    .fc-event.unavailable {
-      background-color: #e73c4e;
-      border-color: #e73c4e;
-    }
-
-    .fc-event.selected {
-      background-color: #2196F3;
-      border-color: #2196F3;
-      color: white;
-      font-weight: bold;
-    }
-    
-    .time-slot-info {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #e8f5e9;
-      border-radius: 4px;
-      display: none;
-    }
-    
-    .time-slot-info.active {
-      display: block;
-    }
-    
     /* Time Slots Styles */
     .time-slots-grid {
       display: grid;
@@ -329,6 +280,18 @@
       border-color: #ccc;
       text-decoration: line-through;
     }
+
+    .time-slot-info {
+      margin-top: 15px;
+      padding: 15px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .time-slot-info.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -336,8 +299,9 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <i class="fas fa-calendar-plus"></i>
-      <h1>Book Room</h1>
+      <h1>Room Scheduler</h1>
     </div>
+    
     <ul class="sidebar-menu">
       <li>
         <a href="dashboard.html">
@@ -354,7 +318,7 @@
       <li>
         <a href="book-room.html" class="active">
           <i class="fas fa-calendar-plus"></i>
-          <span>Book Room</span>
+          <span>Book a Room</span>
         </a>
       </li>
       <li>
@@ -365,8 +329,8 @@
       </li>
       <li id="admin-menu-item" style="display: none;">
         <a href="admin-dashboard.html">
-          <i class="fas fa-cogs"></i>
-          <span>Admin</span>
+          <i class="fas fa-user-shield"></i>
+          <span>Admin Panel</span>
         </a>
       </li>
       <li class="logout-link">
@@ -401,15 +365,24 @@
           </select>
         </div>
         
-        <!-- Calendar Container -->
+        <!-- Date Selection -->
         <div class="form-group">
-          <label>Select Date and Time (Maximum 4 hours)</label>
-          <div id="booking-calendar" class="calendar-container"></div>
+          <label for="booking-date">Select Date</label>
+          <input type="date" id="booking-date" class="form-control" required>
+        </div>
+        
+        <!-- Time Slots Selection -->
+        <div class="form-group">
+          <label>Select Time Slots (Maximum 4 hours, must be continuous)</label>
+          <div id="time-slots-container" class="time-slots-grid">
+            <!-- Time slots will be generated here -->
+          </div>
+          <div id="time-selection-error" class="error-message"></div>
         </div>
         
         <!-- Selected Time Slot Info -->
         <div id="time-slot-info" class="time-slot-info">
-          <p><strong>Selected Time:</strong> <span id="selected-date"></span>, <span id="selected-time"></span></p>
+          <p><strong>Selected Time:</strong> <span id="selected-time-range"></span></p>
         </div>
         
         <!-- Hidden inputs for form submission -->
@@ -479,338 +452,190 @@
           });
         }
       
-        // Initialize calendar
-        initializeCalendar();
+        // Initialize time slots when a room and date are selected
+        initializeTimeSlots();
         
-        // Function to initialize the calendar
-        function initializeCalendar() {
-          const calendarEl = document.getElementById('booking-calendar');
-          if (!calendarEl) return;
+        // Function to initialize time slots
+        function initializeTimeSlots() {
+          const dateInput = document.getElementById('booking-date');
+          const roomSelect = document.getElementById('room');
           
+          if (!dateInput || !roomSelect) return;
+          
+          // Set minimum date to today
           const today = new Date();
-          const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridDay',
-            initialDate: today,
-            allDaySlot: false,
-            slotMinTime: '08:00:00',
-            slotMaxTime: '20:00:00',
-            slotDuration: '01:00:00',
-            headerToolbar: {
-              left: 'prev,next today',
-              center: 'title',
-              right: 'timeGridDay'
-            },
-            selectable: false, // Disable drag selection
-            selectMirror: false,
-            dayMaxEvents: true,
-            height: 'auto',
-            eventClick: function(info) {
-              // Handle clicking on an existing event
-              if (info.event.extendedProps.available) {
-                toggleTimeSlotSelection(info.event);
-              } else if (info.event.extendedProps.selected) {
-                // Allow deselecting a previously selected slot
-                toggleTimeSlotSelection(info.event);
-              }
-            }
-          });
+          const todayFormatted = today.toISOString().split('T')[0];
+          dateInput.min = todayFormatted;
+          dateInput.value = todayFormatted;
           
-          calendar.render();
-          window.bookingCalendar = calendar;
+          // Add event listeners for date and room selection
+          dateInput.addEventListener('change', loadTimeSlots);
+          roomSelect.addEventListener('change', loadTimeSlots);
           
-          // Load existing bookings for the selected room
+          // Initial load of time slots
+          loadTimeSlots();
+        }
+        
+        // Function to load time slots based on selected room and date
+        async function loadTimeSlots() {
+          const timeSlotContainer = document.getElementById('time-slots-container');
+          const dateInput = document.getElementById('booking-date');
           const roomSelect = document.getElementById('room');
-          if (roomSelect) {
-            roomSelect.addEventListener('change', function() {
-              loadExistingBookings();
-            });
-          }
+          const timeSlotInfo = document.getElementById('time-slot-info');
+          const errorMessage = document.getElementById('time-selection-error');
           
-          loadExistingBookings();
-        }
-        
-        // Array to track selected time slots
-        let selectedTimeSlots = [];
-        
-        // Function to toggle time slot selection
-        function toggleTimeSlotSelection(event) {
-          const calendar = window.bookingCalendar;
-          if (!calendar) return;
+          if (!timeSlotContainer || !dateInput || !roomSelect) return;
           
-          const slotStart = event.start;
-          const slotEnd = event.end;
-          const slotHour = slotStart.getHours();
+          // Reset error message
+          if (errorMessage) errorMessage.textContent = '';
           
-          // Check if this is a selected slot (for deselection)
-          if (event.extendedProps.selected) {
-            // Remove this slot from selection
-            selectedTimeSlots = selectedTimeSlots.filter(slot => 
-              !(slot.start.getHours() === slotHour && 
-                slot.start.toDateString() === slotStart.toDateString())
-            );
-            
-            // Remove the visual indicator and add back an available slot
-            event.remove();
-            
-            // Add back an available event in this slot
-            calendar.addEvent({
-              start: slotStart,
-              end: slotEnd,
-              title: 'Available',
-              classNames: ['available'],
-              extendedProps: {
-                available: true
-              }
-            });
-            
-            // Update the booking form
-            updateBookingForm();
-            return;
-          }
+          // Hide time slot info
+          if (timeSlotInfo) timeSlotInfo.classList.remove('active');
           
-          // Check if this slot is already selected
-          const isAlreadySelected = selectedTimeSlots.some(slot => 
-            slot.start.getHours() === slotHour && 
-            slot.start.toDateString() === slotStart.toDateString()
-          );
-          
-          if (isAlreadySelected) {
-            // Remove this slot from selection
-            selectedTimeSlots = selectedTimeSlots.filter(slot => 
-              !(slot.start.getHours() === slotHour && 
-                slot.start.toDateString() === slotStart.toDateString())
-            );
-            
-            // Remove the visual indicator
-            const events = calendar.getEvents();
-            events.forEach(calEvent => {
-              if (calEvent.extendedProps.selected && 
-                  calEvent.start.getHours() === slotHour && 
-                  calEvent.start.toDateString() === slotStart.toDateString()) {
-                calEvent.remove();
-              }
-            });
-          } else {
-            // Check if adding this slot would exceed 4 hours
-            if (selectedTimeSlots.length >= 4) {
-              alert('You can only select up to 4 hours per day');
-              return;
-            }
-            
-            // Check if this slot is continuous with existing selection
-            if (selectedTimeSlots.length > 0) {
-              // Sort current selections by hour
-              const sortedSlots = [...selectedTimeSlots].sort((a, b) => 
-                a.start.getHours() - b.start.getHours()
-              );
-              
-              // Get the earliest and latest hours currently selected
-              const earliestHour = sortedSlots[0].start.getHours();
-              const latestHour = sortedSlots[sortedSlots.length - 1].start.getHours();
-              
-              // Check if new slot is continuous with existing selection
-              const isContinuous = 
-                slotHour === earliestHour - 1 || // One hour before earliest
-                slotHour === latestHour + 1 || // One hour after latest
-                // Or if it fills a gap in the middle
-                sortedSlots.some((slot, index) => {
-                  if (index === sortedSlots.length - 1) return false;
-                  const thisHour = slot.start.getHours();
-                  const nextHour = sortedSlots[index + 1].start.getHours();
-                  return slotHour > thisHour && slotHour < nextHour && (nextHour - thisHour) === 2;
-                });
-              
-              if (!isContinuous) {
-                alert('Selected hours must be continuous');
-                return;
-              }
-            }
-            
-            // Remove the available event and add a selected one
-            event.remove();
-            
-            // Add this slot to selection
-            selectedTimeSlots.push({
-              start: slotStart,
-              end: slotEnd
-            });
-            
-            // Add visual indicator
-            calendar.addEvent({
-              start: slotStart,
-              end: slotEnd,
-              title: 'Selected',
-              classNames: ['selected'],
-              extendedProps: {
-                selected: true
-              }
-            });
-          }
-          
-          // Update the booking form
-          updateBookingForm();
-        }
-        
-        // Function to update the booking form based on selected time slots
-        function updateBookingForm() {
-          if (selectedTimeSlots.length === 0) {
-            // Hide time slot info if no slots selected
-            document.getElementById('time-slot-info').classList.remove('active');
-            document.getElementById('date').value = '';
-            document.getElementById('start-time').value = '';
-            document.getElementById('end-time').value = '';
-            return;
-          }
-          
-          // Sort selected slots by hour
-          const sortedSlots = [...selectedTimeSlots].sort((a, b) => 
-            a.start.getHours() - b.start.getHours()
-          );
-          
-          // Get start and end times
-          const firstSlot = sortedSlots[0];
-          const lastSlot = sortedSlots[sortedSlots.length - 1];
-          
-          const startTime = firstSlot.start;
-          const endTime = lastSlot.end;
-          
-          // Format date and time for display
-          const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-          const timeOptions = { hour: '2-digit', minute: '2-digit' };
-          
-          const formattedDate = startTime.toLocaleDateString('en-US', dateOptions);
-          const formattedStartTime = startTime.toLocaleTimeString('en-US', timeOptions);
-          const formattedEndTime = endTime.toLocaleTimeString('en-US', timeOptions);
-          
-          // Update the time slot info display
-          document.getElementById('selected-date').textContent = formattedDate;
-          document.getElementById('selected-time').textContent = `${formattedStartTime} - ${formattedEndTime}`;
-          document.getElementById('time-slot-info').classList.add('active');
-          
-          // Update hidden form inputs
-          document.getElementById('date').value = startTime.toISOString().split('T')[0];
-          document.getElementById('start-time').value = startTime.toTimeString().split(' ')[0].substring(0, 5);
-          document.getElementById('end-time').value = endTime.toTimeString().split(' ')[0].substring(0, 5);
-        }
-        
-        // Function to load existing bookings for the selected room
-        async function loadExistingBookings() {
-          const roomSelect = document.getElementById('room');
-          if (!roomSelect || !roomSelect.value) return;
+          // Reset hidden inputs
+          document.getElementById('date').value = '';
+          document.getElementById('start-time').value = '';
+          document.getElementById('end-time').value = '';
           
           const roomId = roomSelect.value;
-          const calendar = window.bookingCalendar;
-          if (!calendar) return;
+          const selectedDate = dateInput.value;
+          
+          if (!roomId || !selectedDate) {
+            timeSlotContainer.innerHTML = '<p>Please select both a room and date</p>';
+            return;
+          }
+          
+          // Show loading state
+          timeSlotContainer.innerHTML = '<p>Loading time slots...</p>';
           
           try {
+            // Fetch existing bookings for the selected room and date
             const token = auth.getToken();
-            const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.bookings}?roomId=${roomId}`, {
+            const response = await fetch(`${config.apiBaseUrl}${config.apiEndpoints.bookings}?roomId=${roomId}&date=${selectedDate}`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
             });
             
             if (!response.ok) {
-              throw new Error('Failed to load existing bookings');
+              throw new Error('Failed to load bookings');
             }
             
             const bookings = await response.json();
             
-            // Clear existing events except selected ones
-            const events = calendar.getEvents();
-            events.forEach(event => {
-              if (!event.extendedProps.selected) {
-                event.remove();
+            // Generate time slots from 8am to 8pm
+            timeSlotContainer.innerHTML = '';
+            
+            // Create an array to track which hours are already booked
+            const bookedHours = [];
+            
+            // Process existing bookings to find booked hours
+            bookings.forEach(booking => {
+              if (booking.date === selectedDate) {
+                const startHour = parseInt(booking.startTime.split(':')[0]);
+                const endHour = parseInt(booking.endTime.split(':')[0]);
+                
+                // Mark all hours in this booking as booked
+                for (let hour = startHour; hour < endHour; hour++) {
+                  bookedHours.push(hour);
+                }
               }
             });
             
-            // Add available time slots (8am-8pm in 1-hour blocks)
-            const currentDate = calendar.getDate();
-            const startOfDay = new Date(currentDate);
-            startOfDay.setHours(8, 0, 0, 0);
-            
-            // Create time slots from 8am to 8pm
+            // Generate time slot checkboxes
             for (let hour = 8; hour < 20; hour++) {
-              const slotStart = new Date(startOfDay);
-              slotStart.setHours(hour);
+              const isBooked = bookedHours.includes(hour);
+              const hourFormatted = hour.toString().padStart(2, '0');
+              const timeLabel = `${hourFormatted}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`;
               
-              const slotEnd = new Date(slotStart);
-              slotEnd.setHours(hour + 1);
+              const timeSlotDiv = document.createElement('div');
+              timeSlotDiv.className = 'time-slot';
               
-              // Check if this slot overlaps with any existing booking
-              const isAvailable = !bookings.some(booking => {
-                // Parse the booking date and time strings
-                let bookingDate, bookingStart, bookingEnd;
-                
-                try {
-                  // Handle different date formats that might come from the API
-                  if (booking.date && typeof booking.date === 'string') {
-                    bookingDate = new Date(booking.date);
-                  } else if (booking.startTime && booking.startTime.includes('T')) {
-                    // If startTime is in ISO format, extract the date part
-                    bookingDate = new Date(booking.startTime.split('T')[0]);
-                  }
-                  
-                  // Handle different time formats
-                  if (booking.startTime && booking.startTime.includes('T')) {
-                    // Full ISO format
-                    bookingStart = new Date(booking.startTime);
-                  } else if (booking.startTime && booking.date) {
-                    // Separate date and time
-                    bookingStart = new Date(booking.date + 'T' + booking.startTime);
-                  }
-                  
-                  if (booking.endTime && booking.endTime.includes('T')) {
-                    // Full ISO format
-                    bookingEnd = new Date(booking.endTime);
-                  } else if (booking.endTime && booking.date) {
-                    // Separate date and time
-                    bookingEnd = new Date(booking.date + 'T' + booking.endTime);
-                  }
-                  
-                  const calendarDate = new Date(currentDate);
-                  
-                  // Only check bookings for the same date
-                  if (!bookingDate || bookingDate.toDateString() !== calendarDate.toDateString()) {
-                    return false;
-                  }
-                  
-                  return (
-                    (slotStart >= bookingStart && slotStart < bookingEnd) || // Slot start is within booking
-                    (slotEnd > bookingStart && slotEnd <= bookingEnd) || // Slot end is within booking
-                    (slotStart <= bookingStart && slotEnd >= bookingEnd) // Slot completely contains booking
-                  );
-                } catch (error) {
-                  console.error('Error parsing booking dates:', error, booking);
-                  return false;
-                }
-              });
+              timeSlotDiv.innerHTML = `
+                <input type="checkbox" id="time-slot-${hour}" 
+                  class="time-slot-checkbox" 
+                  value="${hour}" 
+                  ${isBooked ? 'disabled' : ''} 
+                  data-hour="${hour}">
+                <label for="time-slot-${hour}" class="time-slot-label">${timeLabel}</label>
+              `;
               
-              // Add the time slot as an event
-              if (isAvailable) {
-                calendar.addEvent({
-                  start: slotStart,
-                  end: slotEnd,
-                  title: 'Available',
-                  classNames: ['available'],
-                  extendedProps: {
-                    available: true
-                  }
-                });
-              } else {
-                calendar.addEvent({
-                  start: slotStart,
-                  end: slotEnd,
-                  title: 'Booked',
-                  classNames: ['unavailable'],
-                  extendedProps: {
-                    available: false
-                  }
-                });
-              }
+              timeSlotContainer.appendChild(timeSlotDiv);
             }
+            
+            // Add event listeners to checkboxes
+            document.querySelectorAll('.time-slot-checkbox').forEach(checkbox => {
+              checkbox.addEventListener('change', validateTimeSlots);
+            });
+            
           } catch (error) {
-            console.error('Error loading bookings:', error);
+            console.error('Error loading time slots:', error);
+            timeSlotContainer.innerHTML = '<p>Error loading time slots. Please try again.</p>';
+          }
+        }
+        
+        // Function to validate time slot selection (must be continuous and max 4 hours)
+        function validateTimeSlots() {
+          const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+          const errorMessage = document.getElementById('time-selection-error');
+          const timeSlotInfo = document.getElementById('time-slot-info');
+          const selectedTimeRange = document.getElementById('selected-time-range');
+          
+          // Reset error message
+          if (errorMessage) errorMessage.textContent = '';
+          
+          // Hide time slot info
+          if (timeSlotInfo) timeSlotInfo.classList.remove('active');
+          
+          // Reset hidden inputs
+          document.getElementById('date').value = '';
+          document.getElementById('start-time').value = '';
+          document.getElementById('end-time').value = '';
+          
+          if (timeSlotCheckboxes.length === 0) return;
+          
+          // Check if more than 4 hours are selected
+          if (timeSlotCheckboxes.length > 4) {
+            if (errorMessage) errorMessage.textContent = 'You can only book up to 4 hours per day';
+            // Uncheck the last selected checkbox
+            timeSlotCheckboxes[timeSlotCheckboxes.length - 1].checked = false;
+            return;
+          }
+          
+          // Get selected hours and sort them
+          const selectedHours = Array.from(timeSlotCheckboxes).map(cb => parseInt(cb.value)).sort((a, b) => a - b);
+          
+          // Check if hours are continuous
+          let isContinuous = true;
+          for (let i = 1; i < selectedHours.length; i++) {
+            if (selectedHours[i] !== selectedHours[i-1] + 1) {
+              isContinuous = false;
+              break;
+            }
+          }
+          
+          if (!isContinuous) {
+            if (errorMessage) errorMessage.textContent = 'Selected hours must be continuous';
+            return;
+          }
+          
+          // If validation passes, update the form
+          const selectedDate = document.getElementById('booking-date').value;
+          document.getElementById('date').value = selectedDate;
+          
+          // Set start and end times
+          const startHour = selectedHours[0];
+          const endHour = selectedHours[selectedHours.length - 1] + 1;
+          
+          document.getElementById('start-time').value = `${startHour.toString().padStart(2, '0')}:00`;
+          document.getElementById('end-time').value = `${endHour.toString().padStart(2, '0')}:00`;
+          
+          // Update time slot info display
+          if (timeSlotInfo && selectedTimeRange) {
+            const startFormatted = `${startHour.toString().padStart(2, '0')}:00`;
+            const endFormatted = `${endHour.toString().padStart(2, '0')}:00`;
+            selectedTimeRange.textContent = `${selectedDate}, ${startFormatted} - ${endFormatted}`;
+            timeSlotInfo.classList.add('active');
           }
         }
         
@@ -850,27 +675,11 @@
               option.textContent = `${room.name} (Capacity: ${room.capacity || 0})`;
               roomSelect.appendChild(option);
             });
-            
-            // Add event listener to reload calendar when room changes
-            roomSelect.addEventListener('change', function() {
-              // Reset time slot info
-              document.getElementById('time-slot-info').classList.remove('active');
-              document.getElementById('selected-date').textContent = '';
-              document.getElementById('selected-time').textContent = '';
-              
-              // Reset hidden inputs
-              document.getElementById('date').value = '';
-              document.getElementById('start-time').value = '';
-              document.getElementById('end-time').value = '';
-              
-              // Load bookings for the selected room
-              loadExistingBookings();
-            });
           }
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('error-message').textContent = 'Failed to load rooms. Please try again.';
-      }
+        } catch (error) {
+          console.error('Error:', error);
+          document.getElementById('error-message').textContent = 'Failed to load rooms. Please try again.';
+        }
       
         // Handle form submission
         const bookingForm = document.getElementById('booking-form');
@@ -941,8 +750,8 @@
                 body: JSON.stringify({
                   room: roomId,
                   date: date,
-                  startTime: `${date}T${startTime}:00`,
-                  endTime: `${date}T${endTime}:00`,
+                  startTime: startTime,
+                  endTime: endTime,
                   purpose: purpose
                 })
               });

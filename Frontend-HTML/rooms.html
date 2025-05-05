@@ -613,7 +613,7 @@
         
         // Handle potential null/undefined values safely
         const roomName = room.name || 'Unnamed Room';
-        const roomStatus = room.status || 'Unknown';
+        const roomStatus = room.isAvailable ? 'available' : 'unavailable';
         const roomCapacity = room.capacity || 0;
         const roomLocation = room.location || 'Not specified';
         const roomType = room.type || 'Standard';
@@ -623,16 +623,13 @@
         roomCard.innerHTML = `
           <div class="booking-card-header">
             <h3>${roomName}</h3>
-            <span class="status ${roomStatus === 'available' ? 'status-available' : 'status-unavailable'}">
-              ${roomStatus}
-            </span>
           </div>
           <div class="booking-card-body">
             <div class="booking-details">
               <p><i class="fas fa-users"></i> Capacity: ${roomCapacity} people</p>
               <p><i class="fas fa-map-marker-alt"></i> Location: ${roomLocation}</p>
               <p><i class="fas fa-info-circle"></i> Type: ${roomType}</p>
-              <p><i class="fas fa-list-ul"></i> Amenities: ${roomAmenities}</p>
+              <p><i class="fas fa-align-left"></i> Description: ${room.description || 'No description available'}</p>
             </div>
           </div>
           <div class="booking-card-footer">
